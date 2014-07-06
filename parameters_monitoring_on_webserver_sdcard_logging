@@ -1,0 +1,304 @@
+#include <SD.h>
+#include <SPI.h>
+#include <Ethernet.h>
+#include <DHT22.h>
+// Only used for sprintf
+#include <stdio.h>
+
+// On the Ethernet Shield, CS is pin 4. Note that even if it's not
+// used as the CS pin, the hardware CS pin (10 on most Arduino boards,
+// 53 on the Mega) must be left as an output or the SD library
+// functions will not work.
+const int chipSelect = 4;
+
+
+
+byte mac[] = {  
+  0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+// Data wire is plugged into port 7 on the Arduino
+// Connect a 4.7K resistor between VCC and the data pin (strong pullup)
+#define DHT22_PIN 7
+
+// Setup a DHT22 instance
+DHT22 tempumidDHT22(DHT22_PIN);
+
+//IPAddress ip(192,168,1,2 ); 
+byte ip[] = { 
+  192,168,1,2 };
+
+EthernetServer server(80);
+
+void setup(void)
+{
+  // Open serial communications and wait for port to open:
+  Serial.begin(9600);
+   while (!Serial) {
+    ; // wait for serial port to connect. Needed for Leonardo only
+  }
+
+
+  Serial.print("Initializing SD card...");
+  // make sure that the default chip select pin is set to
+  // output, even if you don't use it:
+  pinMode(10, OUTPUT);
+  
+  // see if the card is present and can be initialized:
+  if (!SD.begin(chipSelect)) {
+    Serial.println("Card failed, or not present");
+    // don't do anything more:
+    return;
+  }
+  Serial.println("card initialized.");
+  
+ // start the Ethernet connection and the server:
+  Ethernet.begin(mac, ip);
+  //Ethernet.begin();  // this will use DHCP
+  server.begin();
+  
+}
+
+void loop(void)
+{ int nivelvibratii,val2;
+int nivelsunet;
+
+   val2 = analogZgomot(0, 100);
+   if((val2>330) & (val2<370))
+    nivelsunet=30;
+       if((val2>=370) & (val2<410))
+    nivelsunet=40;
+     if((val2>=410) & (val2<450))
+    nivelsunet=50;
+     if((val2>=450) & (val2<490))
+    nivelsunet=60;
+     if((val2>=530) & (val2<570))
+    nivelsunet=70;
+     if((val2>=570) & (val2<610))
+    nivelsunet=80;
+     if((val2>=610) & (val2<650))
+    nivelsunet=90;
+     if((val2>=650) & (val2<700))
+    nivelsunet=100;
+
+  DHT22_ERROR_t errorCode;
+  errorCode = tempumidDHT22.readData();
+  
+  // The sensor can only be read from every 1-2s, and requires a minimum
+  // 2s warm-up after power-on.
+ delay(3000);
+  // listen for incoming clients
+  
+   File dataFile = SD.open("iulie.txt", FILE_WRITE);
+  
+   String data = "";
+  // if the file is available, write to it:
+ 
+ int x = tempumidDHT22.getTemperatureC();
+ int y=  tempumidDHT22.getHumidity();
+  nivelvibratii=analogVibratii(0,100);
+  
+  val2 = analogZgomot(0, 100);
+   if((val2>330) & (val2<370))
+    nivelsunet=30;
+       if((val2>=370) & (val2<410))
+    nivelsunet=40;
+     if((val2>=410) & (val2<450))
+    nivelsunet=50;
+     if((val2>=450) & (val2<490))
+    nivelsunet=60;
+     if((val2>=530) & (val2<570))
+    nivelsunet=70;
+     if((val2>=570) & (val2<610))
+    nivelsunet=80;
+     if((val2>=610) & (val2<650))
+    nivelsunet=90;
+     if((val2>=650) & (val2<700))
+    nivelsunet=100;
+  
+  
+  //data +="Temperatura " +String(int(myDHT22.getTemperatureC()))  + "     "  +  "  Umiditate "+String(int(myDHT22.getHumidity()));
+  data="Temperatura " + String(x) + "   " +  "  Umiditate "  +   String(y)+ "  " + "  NivelVibratii  " +  String(nivelvibratii)+ "  "+ " NivelZgomot " + String(nivelsunet);
+  
+  
+  if (dataFile) {
+   
+    dataFile.println(data);
+   
+    
+    dataFile.close();
+    // print to the serial port too:
+    Serial.println(data);
+    delay(4000);
+
+    
+  }  
+  // if the file isn't open, pop up an error:
+  else {
+    Serial.println("error opening iulie.txt");
+  } 
+  
+  // incepe partea de client-server 
+  EthernetClient client = server.available();
+  if (client) {
+    // an http request ends with a blank line
+    boolean currentLineIsBlank = true;
+    while (client.connected()) {
+      if (client.available()) {
+        char c = client.read();
+
+        if (c == '\n' && currentLineIsBlank) {
+          // send a standard http response header
+          client.println("HTTP/1.1 200 OK");
+          client.println("Content-Type: text/html");
+          client.println();
+          client.print("<body bgcolor='#800000' style='align:center'>");
+          
+  
+  //Serial.print("Requesting data...");
+  //errorCode = tempumidDHT22.readData();
+  switch(errorCode)
+  {
+    case DHT_ERROR_NONE:
+     float x=tempumidDHT22.getTemperatureC();
+  float y=tempumidDHT22.getHumidity();
+      //Serial.print("Got Data ");
+     // Serial.print(myDHT22.getTemperatureC());
+      //Serial.print("C ");
+      //Serial.print(myDHT22.getHumidity());
+      //Serial.println("%");
+      // Alternately, with integer formatting which is clumsier but more compact to store and
+	  // can be compared reliably for equality:
+	  //	 
+      client.print("<h1 style='color:yellow'>");
+      client.print("<center><font size='20'>Dispozitiv de monitorizare a unei</font></center> ");
+      client.println("<center><font size='20' > camere de servere</font></center>");
+      client.println();
+     // char buf[128];
+   /*   sprintf(buf, " <p>Temperatura : %hi.%01hi &#176 C</p> <p> Umiditate : %i.%01i %% </p> ",
+                   myDHT22.getTemperatureCInt()/10, 
+                   abs(myDHT22.getTemperatureCInt()%10),             
+                   myDHT22.getHumidityInt()/10,
+                   myDHT22.getHumidityInt()%10);
+      //Serial.println(buf);*/
+    //client.print("Temp");
+    
+    client.println("<p>Temperatura :");
+    client.print(x,1);
+    client.print(" &#176 C </p>");
+    
+    client.println("<p>Umiditate :");
+    client.print(y,1);
+    client.print(" % </p>");
+      //client.print(buf);
+        nivelvibratii = analogVibratii(0, 100);
+    
+    client.println("<p>Nivel Vibratii : ");
+    client.print(nivelvibratii);
+    client.print("</p>");
+     
+     
+    client.println("<p>Nivel Sunet :");
+    client.print(nivelsunet);
+    client.print("  dB </h>");
+     
+      
+     
+       client.print("</h1>");
+     
+  
+     
+     
+      break;
+      
+      
+   /* case DHT_ERROR_CHECKSUM:
+    
+     // Serial.print("check sum error ");
+      //Serial.print(myDHT22.getTemperatureC());
+      //Serial.print("C ");
+      
+      client.print("check sum error ");
+      client.print(myDHT22.getTemperatureC());
+      client.print("C ");
+      
+      
+      //Serial.print(myDHT22.getHumidity());
+     // Serial.println("%");
+      
+      client.print(myDHT22.getHumidity());
+      client.print("<br>");
+      
+      break;
+      
+    case DHT_BUS_HUNG:
+      //Serial.println("BUS Hung ");
+       client.print("BUS Hung ");
+      break;
+      
+      
+    case DHT_ERROR_NOT_PRESENT:
+      //Serial.println("Not Present ");
+      client.print("Not Present ");
+      break;
+      
+      
+    case DHT_ERROR_ACK_TOO_LONG:
+      //Serial.println("ACK time out ");
+      client.print("ACK time out ");
+      break;
+      
+      
+    case DHT_ERROR_SYNC_TIMEOUT:
+      //Serial.println("Sync Timeout ");
+      client.print("Data Timeout ");
+      break;
+      
+      
+    case DHT_ERROR_DATA_TIMEOUT:
+     // Serial.println("Data Timeout ");
+      client.print("Sync Timeout ");
+      break;
+      */
+      
+   /* case DHT_ERROR_TOOQUICK:
+      //Serial.println("Polled to quick ");
+      client.print("Polled to quick ");*/
+      break;
+  }
+  break;
+}
+  
+  if (c == '\n') {
+          // you're starting a new line
+          currentLineIsBlank = true;
+        } 
+        else if (c != '\r') {
+          // you've gotten a character on the current line
+          currentLineIsBlank = false;
+        }
+      }
+    }
+
+    // give the web browser time to receive the data
+    delay(2500);
+    // close the connection:
+    client.stop();
+    
+    }
+  }
+  
+
+int analogZgomot(int pin, int count) {
+  int maxZgomot = 0;
+  for (int i = 0; i < count; i++) {
+    maxZgomot = max(analogRead(3), maxZgomot);    
+  }
+  return maxZgomot;
+}
+
+int analogVibratii(int pin, int count) {
+  int maxVibratii = 0;
+  for (int i = 0; i < count; i++) {
+    maxVibratii = max(analogRead(0), maxVibratii);    
+  }
+  return maxVibratii;
+}
