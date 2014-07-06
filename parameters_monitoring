@@ -1,0 +1,93 @@
+#include <DHT22.h>
+// Only used for sprintf
+//#include <stdio.h>
+
+// Data wire is plugged into port 7 on the Arduino
+// Connect a 4.7K resistor between VCC and the data pin (strong pullup)
+#define DHT22_PIN 7
+//
+// Setup a DHT22 instance
+DHT22 tempumidDHT22(DHT22_PIN);
+  
+void setup(void)
+{
+  // start serial port
+  Serial.begin(9600);
+ 
+}
+
+void loop(void)
+{ 
+  DHT22_ERROR_t errorCode;
+  
+  // The sensor can only be read from every 1-2s, and requires a minimum
+  // 2s warm-up after power-on.
+  delay(3000);
+  
+  
+  errorCode = tempumidDHT22.readData();
+  
+switch(errorCode)
+ {case DHT_ERROR_NONE:
+   float x=tempumidDHT22.getTemperatureC();
+  float y=tempumidDHT22.getHumidity();
+ 
+ 
+      //Serial.println(buf);
+   
+   int nivelsunet;
+  int val = analogZgomot(0, 100);
+   
+    if((val>330) & (val<370))
+    nivelsunet=30;
+       if((val>=370) & (val<410))
+    nivelsunet=40;
+     if((val>=410) & (val<450))
+    nivelsunet=50;
+     if((val>=450) & (val<490))
+    nivelsunet=60;
+     if((val>=530) & (val<570))
+    nivelsunet=70;
+     if((val>=570) & (val<610))
+    nivelsunet=80;
+     if((val>=610) & (val<650))
+    nivelsunet=90;
+     if((val>=650) & (val<700))
+    nivelsunet=100;
+    
+ int nivelvibratii=analogVibratii(0,100); 
+   
+      Serial.print(x,1);
+      Serial.print(",");
+      Serial.print(y,1);
+     Serial.print(",");
+     Serial.print(nivelsunet);
+     Serial.print(",");
+     Serial.print(nivelvibratii);
+     Serial.println();
+   
+      // Alternately, with integer formatting which is clumsier but more compact to store and
+	  // can be compared reliably for equality:
+	  //
+break;	  
+ } 
+  
+    
+  
+}
+
+int analogZgomot(int pin, int count) {
+  int maxZgomot = 0;
+  for (int i = 0; i < count; i++) {
+    maxZgomot = max(analogRead(3), maxZgomot);    
+  }
+  return maxZgomot;
+}
+
+int analogVibratii(int pin, int count) {
+  int maxVibratii = 0;
+  for (int i = 0; i < count; i++) {
+    maxVibratii = max(analogRead(0), maxVibratii);    
+  }
+  return maxVibratii;
+}
