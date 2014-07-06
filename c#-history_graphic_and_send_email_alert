@@ -1,0 +1,165 @@
+using System;
+using System.Collections.Generic;
+using System.ComponentModel;
+using System.Data;
+using System.Drawing;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using System.IO;
+using System.IO.Ports;
+using System.Net;
+using System.Net.Mail;
+
+namespace WindowsFormsApplication4
+{
+    public partial class Monitorizare : Form
+    {
+        public static System.IO.Ports.SerialPort serialPort1;
+        
+        public SmtpClient client = new SmtpClient();
+        public MailMessage msg = new MailMessage();
+        public System.Net.NetworkCredential smtpCreds =
+           new System.Net.NetworkCredential("licentaiul2014@gmail.com", "student1991");
+ 
+
+
+        public Monitorizare()
+        {
+            InitializeComponent();
+            
+        }
+
+        private void serialPort1_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        {
+            string line = serialPort1.ReadLine();
+            this.BeginInvoke(new LineReceivedEvent(LineReceived), line);
+        }
+
+        private void SendEmail(string sendTo, string sendFrom, string subject, string body)
+        {
+            try
+            {
+                client.Host = "smtp.gmail.com";
+                client.Port = 587;
+                client.UseDefaultCredentials = false;
+                client.Credentials = smtpCreds;
+                client.EnableSsl = true;
+
+                MailAddress to = new MailAddress(sendTo);
+                MailAddress from = new MailAddress(sendFrom);
+
+                msg.Subject = subject;
+                msg.Body = body;
+                msg.From = from;
+                msg.To.Add(to);
+
+                client.Send(msg);
+
+
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "error");
+            }
+        }
+       
+        private delegate void LineReceivedEvent(string line);
+       
+        private void LineReceived(string line)
+        {
+            //What to do with the received line here
+          //  label1.Text = line;
+            String[] dataSensors = line.Split(',');
+            afisare.Text = dataSensors[0].ToString();
+            afisare2.Text = dataSensors[1].ToString();
+            afisare3.Text = dataSensors[2].ToString();
+            afisare4.Text = dataSensors[3].ToString();
+            //progressBar1.Value = int.Parse(line);
+
+           //int Temperature =
+    //(int)(Math.Round(Convert.ToDecimal(dataTempHumid[0]), 0));
+           float Temperature = float.Parse(dataSensors[0]);
+           float Umiditate = float.Parse(dataSensors[1]);
+
+          // int Umiditate =
+   // (int)(Math.Round(Convert.ToDecimal(dataTempHumid[1]), 0));
+            int Zgomot =
+    (int)(Math.Round(Convert.ToDecimal(dataSensors[2]), 0));
+            int Vibratii =
+    (int)(Math.Round(Convert.ToDecimal(dataSensors[3]), 0));
+
+            this.chart1.Series[0].Points.Add(Temperature);
+            this.chart2.Series[0].Points.Add( Umiditate);
+            this.chart3.Series[0].Points.Add( Zgomot);
+            this.chart4.Series[0].Points.Add( Vibratii);
+
+
+            if (Temperature >= 27.3)
+            {
+                SendEmail("licentaiul2014@gmail.com", "licentaiul2014@gmail.com", "Alerta", "Prag temperatura depasit");
+            }
+            if (Umiditate >= 48)
+            {
+                SendEmail("licentaiul2014@gmail.com", "licentaiul2014@gmail.com", "Alerta", "Prag Umiditate depasit");
+            }
+            if (Zgomot > 50)
+            {
+                SendEmail("licentaiul2014@gmail.com", "licentaiul2014@gmail.com", "Alerta", "Prag Zgomot depasit");
+            }
+            if (Vibratii > 1)
+            {
+                SendEmail("licentaiul2014@gmail.com", "licentaiul2014@gmail.com", "Alerta", "Prag vibratii depasit");
+            }
+
+            
+
+
+        }
+
+        private void Form1_Load(object sender, EventArgs e)
+        {
+            System.ComponentModel.IContainer components = new System.ComponentModel.Container();
+            serialPort1 = new System.IO.Ports.SerialPort(components);
+
+            serialPort1.PortName = "COM9";
+            serialPort1.BaudRate = 9600;
+            serialPort1.DtrEnable = true;
+            serialPort1.Open();
+
+            serialPort1.DataReceived += serialPort1_DataReceived;
+        }
+
+        private void progressBar1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void afisare2_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void textBox1_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+       
+
+        private void chart1_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void label2_Click(object sender, EventArgs e)
+        {
+
+        }
+
+       
+
+       
+    }
+}
